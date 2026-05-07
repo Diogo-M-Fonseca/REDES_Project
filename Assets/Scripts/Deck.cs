@@ -22,5 +22,12 @@ public class Deck : MonoBehaviour
         Topcard = cards.Length - 1;
     }
 
+    public Card Draw()
+    {
+        if (Topcard == 0)
+            throw new System.InvalidOperationException("vazio");
+
+        return cards[Topcard];
+    }
 
 }
