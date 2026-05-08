@@ -30,4 +30,12 @@ public class Deck : MonoBehaviour
         return cards[Topcard];
     }
 
+
+    private void Shuffle()
+    {
+        for (int i = cards.Length - 1; i > 0; i--)
+        {
+        }
+    }
+
 }

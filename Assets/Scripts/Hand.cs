@@ -33,5 +33,14 @@ public class Hand
 
         return total;
     }
+
+    public bool IsBust()
+    {
+        return GetHandValue() > 21;
+    }
    
+    public bool HasBlackJack()
+    {
+        return cards.Count == 2 && GetHandValue() == 21;
+    }
 }
