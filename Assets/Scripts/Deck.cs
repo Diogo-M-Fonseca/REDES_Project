@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class Deck : MonoBehaviour
 {
-    private Card[] cards = new Card[53];
+    private Card[] cards = new Card[52];
 
-    private int Topcard;
+    private int topCard;
 
     public void initialize()
     {
@@ -12,22 +12,28 @@ public class Deck : MonoBehaviour
 
         foreach (Enum_Suit suit in System.Enum.GetValues(typeof(Enum_Suit)))
         {
-            for (int value = 1; value <= index; value++)
+            for (int value = 1; value <= 13; value++)
             {
                 //calculo do valor das cartas de blackjack
                 int blackjackValue = Mathf.Min(value, 10);
-                cards[index] = new Card(blackjackValue, suit);
+                cards[index] = new Card(value, suit);
+                index++;
             }
         }
-        Topcard = cards.Length - 1;
+        Shuffle();
+
+        topCard = cards.Length - 1;
     }
 
     public Card Draw()
     {
-        if (Topcard == 0)
+        if (topCard < 0)
             throw new System.InvalidOperationException("vazio");
 
-        return cards[Topcard];
+        Card card = cards[topCard];
+        topCard--;
+
+        return card;
     }
 
 
@@ -35,6 +41,12 @@ public class Deck : MonoBehaviour
     {
         for (int i = cards.Length - 1; i > 0; i--)
         {
+            //algoritmo fisher-yates??
+            int randomIndex = Random.Range(0, i + 1);
+
+            Card temp = cards[i];
+            cards[i] = cards[randomIndex];
+            cards[randomIndex] = temp;
         }
     }
 
