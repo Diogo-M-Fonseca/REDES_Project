@@ -84,5 +84,35 @@ public class GameManager : MonoBehaviour
 
     }
 
+    private void Turn()
+    {
+        //Turno do Dealer
+        while (dealerHand.GetHandValue() < 17)
+        {
+            GiveDealer();
+        }
+
+        //Turno do player
+        GivePlayer();
+
+        //verifica se alguém venceu
+        Conclusion();
+    }
+
+    public void HitButton()
+    {
+        GivePlayer();
+
+        if (playerHand.IsBust())
+        {
+            Debug.Log("Derrota");
+        }
+    }
+
+    public void StandButton()
+    {
+        Turn(); 
+    }
+
 
 }
