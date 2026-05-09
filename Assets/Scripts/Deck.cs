@@ -6,7 +6,7 @@ public class Deck
 
     private int topCard;
 
-    public void initialize()
+    public void Initialize()
     {
         int index = 0;
 
