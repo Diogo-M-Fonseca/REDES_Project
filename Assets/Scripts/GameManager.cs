@@ -24,7 +24,7 @@ public class GameManager : MonoBehaviour
         playerHand = new Hand();
         dealerHand = new Hand();
 
-
+        FirstRound();
     }
 
     private void SpawnCard(Card card, Transform parent)
@@ -84,16 +84,13 @@ public class GameManager : MonoBehaviour
 
     }
 
-    private void Turn()
+    private void TurnDealer()
     {
         //Turno do Dealer
         while (dealerHand.GetHandValue() < 17)
         {
             GiveDealer();
         }
-
-        //Turno do player
-        GivePlayer();
 
         //verifica se alguém venceu
         Conclusion();
@@ -111,7 +108,15 @@ public class GameManager : MonoBehaviour
 
     public void StandButton()
     {
-        Turn(); 
+        TurnDealer(); 
+    }
+
+    private void FirstRound()
+    {
+        GivePlayer();
+        GiveDealer();
+        GivePlayer();
+        GiveDealer();
     }
 
 
