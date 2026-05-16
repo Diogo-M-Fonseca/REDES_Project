@@ -16,20 +16,20 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Transform playerArea;
     [SerializeField] private Transform dealerArea;
 
+    private float offSet = 0.8f;
+
     void Start()
     {
-        deck = new Deck();
-        deck.Initialize();
-
-        playerHand = new Hand();
-        dealerHand = new Hand();
-
-        FirstRound();
+        StartGame();
     }
 
     private void SpawnCard(Card card, Transform parent)
     {
         CardView view = Instantiate(cardPrefab, parent);
+
+        int index = parent.childCount -1;
+
+        view.transform.localPosition = new Vector3(index * offSet, 0, 0);
 
         view.SetSprite(card);
 
@@ -71,7 +71,7 @@ public class GameManager : MonoBehaviour
         }
         else if (playerValue > dealerValue)
         {
-            Debug.Log("Dealer ganhou");
+            Debug.Log("jogador ganhou");
         }
         else if (playerValue < dealerValue)
         {
@@ -118,6 +118,33 @@ public class GameManager : MonoBehaviour
         GivePlayer();
         GiveDealer();
     }
+
+    public void StartGame()
+    {
+        ClearTable();
+
+        deck = new Deck();
+        deck.Initialize();
+
+        playerHand = new Hand();
+        dealerHand = new Hand();
+
+        FirstRound();
+    }
+
+    private void ClearTable()
+    {
+        foreach (Transform child in playerArea)
+        {
+            Destroy(child);
+        }
+
+        foreach (Transform child in dealerArea)
+        {
+            Destroy(child);
+        }
+    }
+
 
 
 }

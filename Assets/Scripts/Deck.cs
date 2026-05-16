@@ -14,8 +14,6 @@ public class Deck
         {
             for (int value = 1; value <= 13; value++)
             {
-                //calculo do valor das cartas de blackjack
-                int blackjackValue = Mathf.Min(value, 10);
                 cards[index] = new Card(value, suit);
                 index++;
             }
