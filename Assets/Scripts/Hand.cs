@@ -5,6 +5,8 @@ public class Hand
 {
     private readonly List<Card> cards = new();
 
+    public int CardCount => cards.Count;
+
     public void AddCard(Card card)
     {
         cards.Add(card);
