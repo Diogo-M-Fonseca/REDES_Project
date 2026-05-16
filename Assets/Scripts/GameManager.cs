@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -15,6 +16,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private CardView cardPrefab;
     [SerializeField] private Transform playerArea;
     [SerializeField] private Transform dealerArea;
+    [SerializeField] private TMP_Text playerPontuation;
+    [SerializeField] private TMP_Text dealerPontuation;
 
     private float offSet = 0.8f;
 
@@ -41,6 +44,8 @@ public class GameManager : MonoBehaviour
         playerHand.AddCard(card);
 
         SpawnCard(card, playerArea);
+
+        ChangePontuation();
     }
 
     private void GiveDealer()
@@ -49,6 +54,8 @@ public class GameManager : MonoBehaviour
         dealerHand.AddCard(card);
 
         SpawnCard(card, dealerArea);
+
+        ChangePontuation();
     }
 
     private void Conclusion()
@@ -92,6 +99,8 @@ public class GameManager : MonoBehaviour
             GiveDealer();
         }
 
+        ChangePontuation();
+
         //verifica se alguém venceu
         Conclusion();
     }
@@ -130,6 +139,7 @@ public class GameManager : MonoBehaviour
         dealerHand = new Hand();
 
         FirstRound();
+        ChangePontuation();
     }
 
     private void ClearTable()
@@ -145,6 +155,11 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void ChangePontuation()
+    {
+        playerPontuation.text = playerHand.GetHandValue().ToString();
+        dealerPontuation.text = dealerHand.GetHandValue().ToString();
+    }
 
 
 }
