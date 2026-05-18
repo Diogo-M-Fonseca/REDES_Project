@@ -1,8 +1,21 @@
+#if UNITY_EDITOR
+using UnityEditor.Build.Reporting;
+using System.Linq;
+#endif
+
+
 using System.Collections;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using System;
+using UnityEditor;
+using System.IO;
+using Debug = UnityEngine.Debug;
+
+
+
+
 
 
 #if UNITY_STANDALONE_WIN
@@ -114,8 +127,8 @@ public class NetworkSetup : MonoBehaviour
     static void SetWindowTile(string title)
     {
 #if !UNITY_EDITOR
-        uint processid = (uint)Process.GetCurrentProcess().id;
-        IntPtr hWnd = FindWindowByProcessId(processId)
+        uint processId = (uint)Process.GetCurrentProcess().Id;
+        IntPtr hWnd = FindWindowByProcessId(processId);
         if (hWnd != IntPtr.Zero)
         {
             SetWindowText(hWnd, title);
@@ -126,6 +139,119 @@ public class NetworkSetup : MonoBehaviour
     static void SetWindowTile(string tile)
     {
 
+    }
+#endif
+
+#if UNITY_EDITOR
+    [MenuItem("Tools/Build Windows (x64)", priority = 0)]
+
+    public static bool BuildGame()
+    {
+        //Specify build options
+        BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions();
+        buildPlayerOptions.scenes = EditorBuildSettings.scenes
+            .Where(s => s.enabled)
+            .Select(s => s.path)
+            .ToArray();
+        buildPlayerOptions.locationPathName = Path.Combine("Build", "Blackjack.exe");
+        buildPlayerOptions.target = BuildTarget.StandaloneWindows;
+        buildPlayerOptions.options = BuildOptions.None;
+        //Perform the build
+        var report = BuildPipeline.BuildPlayer(buildPlayerOptions);
+        //Output the result of the build
+        Debug.Log($"Build ended with status: {report.summary.result}");
+        //Additional log on the build, looking at report.summary
+        return report.summary.result == BuildResult.Succeeded;
+    }
+#endif
+
+#if UNITY_EDITOR
+
+    private static void Run(string path, string args)
+    {
+        //Start new process
+        Process process = new Process();
+        //configure the process using the StartInfo properties
+        process.StartInfo.FileName = path;
+        process.StartInfo.Arguments = args;
+        process.StartInfo.WindowStyle = ProcessWindowStyle.Normal; // choose the window style: Hidden, Minimized, Maximized, Normal
+        process.StartInfo.RedirectStandardOutput = false; // Set to true to redirect the output (so you can read it in unity)
+        process.StartInfo.UseShellExecute = true; //Set to false if you want to redirect output
+        //Run to process
+        process.Start();
+    }
+
+    [MenuItem("Tools/Build and Launch (Server)", priority = 10)]
+
+    public static void BuildAndLaunch1()
+    {
+        CloseAll();
+        if (BuildGame())
+        {
+            LaunchServer();
+        }
+    }
+    [MenuItem("Tools/Build and Launch (Client)", priority = 15)]
+
+    public static void BuildAndLaunchClient()
+    {
+        CloseAll();
+        if (BuildGame())
+        {
+            LaunchClient();
+        }
+    }
+    [MenuItem("Tools/Build and Launch (Server + Client)", priority = 20)]
+
+    public static void BuildAndLaunchServerAndClient()
+    {
+        CloseAll();
+        if (BuildGame())
+        {
+            LaunchClientAndServer();
+        }
+    }
+    [MenuItem("Tools/Launch (Server) _F11", priority = 30)]
+
+    public static void LaunchServer()
+    {
+        Run("Build\\Blackjack.exe", "--server");
+    }
+    [MenuItem("Tools/Launch (Server + Client)", priority = 40)]
+
+    public static void LaunchClientAndServer()
+    {
+        LaunchServer();
+        LaunchClient();
+    }
+    [MenuItem("Tools/Launch (Client)", priority = 45)]
+
+    public static void LaunchClient()
+    {
+        Run("Build\\Blackjack.exe", "");
+    }
+    [MenuItem("Tools/Close All", priority = 100)]
+
+    public static void CloseAll()
+    {
+        //Get all processes with the specified name
+        Process[] processes = Process.GetProcessesByName("Blackjack");
+        foreach (var  process in processes)
+        {
+            try
+            {
+                //close the process
+                process.Kill();
+                //Wait for the process to exit
+                process.WaitForExit();
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions, if any
+                // This could occur if the process has already exited or you dont have permission to kill it
+                Debug.LogWarning($"Error trying to kill process {process.ProcessName}: {ex.Message}");
+            }
+        }
     }
 #endif
 }
