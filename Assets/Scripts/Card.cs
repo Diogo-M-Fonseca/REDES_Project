@@ -1,10 +1,11 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public struct Card 
+public struct Card : INetworkSerializable
 {
     //escolhi usar struct porque as cartas serão imutáveis
-    public int Value {  get;  }
-    public Enum_Suit Suit { get; }
+    public int Value { get; private set; }
+    public Enum_Suit Suit { get; private set; }
 
 
     //separar valor real da carta do valor do jogo
@@ -23,5 +24,20 @@ public struct Card
     {
         Value = value;
         Suit = suit;
+    }
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        int value = Value;
+        Enum_Suit suit = Suit;
+
+        serializer.SerializeValue(ref value);
+        serializer.SerializeValue(ref suit);
+
+        if (serializer.IsReader)
+        {
+            Value = value;
+            Suit = suit;
+        }
     }
 }
