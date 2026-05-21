@@ -24,7 +24,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TMP_Text resultText;
     [SerializeField] private TMP_Text pontuationText;
 
-    private float offSet = 0.8f;
+    private float offSet = 2f;
     private bool endGame;
 
     void Start()
