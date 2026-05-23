@@ -7,6 +7,10 @@ public class GameManager : NetworkBehaviour
 {
     private Deck deck;
 
+    private NetworkVariable<Enum_Turn> currentTurn = new(Enum_Turn.waiting);
+
+    int currentPlayerIndex = 0;
+
     private void Start()
     {
         if (IsServer)
