@@ -45,4 +45,9 @@ public class Hand
     {
         return cards.Count == 2 && GetHandValue() == 21;
     }
+
+    public void Clear()
+    {
+        cards.Clear();
+    }
 }
