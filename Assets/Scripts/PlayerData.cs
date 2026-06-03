@@ -1,15 +1,29 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerData
+public class PlayerData : NetworkBehaviour
 {
     public ulong clientId { get; private set; }
     public Hand hand { get; private set; }
     public bool isStanding { get; private set; }
 
-    public PlayerData(ulong ClientId)
+    public override void OnNetworkSpawn()
     {
-        clientId = ClientId;
+        if (!IsServer) return;
+
+        hand = new Hand();
+        isStanding = false;
     }
+
+
+    [ServerRpc]
+    public void HitRpc()
+    {
+        if (!IsServer) return;
+        if (isStanding) return;
+
+    }
+
 
     public void Stand()
     {

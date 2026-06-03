@@ -5,19 +5,27 @@ using Unity.Netcode;
 
 public class GameManager : NetworkBehaviour
 {
+    public static GameManager Instance { get; private set; }
+
     private Deck deck;
 
     private NetworkVariable<Enum_Turn> currentTurn = new(Enum_Turn.waiting);
 
     int currentPlayerIndex = 0;
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
-        if (IsServer)
+        if (Instance != null && Instance != this)
         {
-            deck = new Deck();
-            deck.Initialize();
+            Destroy(gameObject);
+            return;
         }
+
+        if (!IsServer) return;
+
+        deck = new Deck();
+        deck.Initialize();
+
     }
 
 }
