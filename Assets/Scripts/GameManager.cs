@@ -10,7 +10,7 @@ public class GameManager : NetworkBehaviour
 
     private Deck deck;
 
-    private NetworkVariable<Enum_Turn> currentTurn = new(Enum_Turn.waiting);
+    private Enum_Turn currentTurn;
 
     private readonly List<PlayerData> players = new();
 
@@ -29,6 +29,7 @@ public class GameManager : NetworkBehaviour
         deck = new Deck();
         deck.Initialize();
 
+        currentTurn = Enum_Turn.waiting;
     }
 
     public void Registration(ulong clientId)
@@ -38,6 +39,11 @@ public class GameManager : NetworkBehaviour
         if (players.Exists(p => p.clientId == clientId)) return;
 
         players.Add(new PlayerData(clientId));
+
+        if (players.Count >= 2)
+        {
+            StartRound();
+        }
     }
 
     public PlayerData GetCurrentPlayer()
@@ -59,10 +65,6 @@ public class GameManager : NetworkBehaviour
         }
     }
 
-    public Card DrawCard()
-    {
-        return deck.Draw();
-    }
     public void DealerTurn()
     {
         EndRound();
@@ -76,6 +78,34 @@ public class GameManager : NetworkBehaviour
         {
             player.Clear();
         }
+    }
+
+
+    public void DealFirstCards()
+    {
+        foreach (PlayerData player in players)
+        {
+            player.Hit(deck.Draw());
+            player.Hit(deck.Draw());
+        }
+    }
+
+    public void StartRound()
+    {
+        currentTurn = Enum_Turn.dealing;
+
+        foreach (PlayerData player in players)
+        {
+            player.Clear();
+        }
+
+        deck = new Deck();
+        deck.Initialize();
+
+        DealFirstCards();
+
+        currentPlayerIndex = 0;
+        currentTurn = Enum_Turn.player;
     }
 
 }
