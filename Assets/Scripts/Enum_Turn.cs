@@ -5,6 +5,6 @@ public enum Enum_Turn
     waiting,
     dealing,
     player,
-    Dealer,
+    dealer,
     Finished
 }

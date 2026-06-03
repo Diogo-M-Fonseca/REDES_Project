@@ -55,20 +55,61 @@ public class GameManager : NetworkBehaviour
     public void NextTurn()
     {
         if (!IsServer) return;
-        if (players.Count == 0) return;
-
+        
         currentPlayerIndex++;
 
         if (currentPlayerIndex >= players.Count)
         {
-            currentPlayerIndex = 0;
+            DealerTurn();
+            return;
         }
     }
 
     public void DealerTurn()
     {
+        currentTurn = Enum_Turn.dealer;
+
+        PlayerData dealer = new PlayerData(999); // Fake Id
+
+        dealer.Hit(deck.Draw());
+        dealer.Hit(deck.Draw());
+
+        while (dealer.HandValue < 17)
+        {
+            dealer.Hit(deck.Draw());   
+        }
+        Conclusion(dealer);
+    }
+
+
+    public void Conclusion(PlayerData dealer)
+    {
+        currentTurn = Enum_Turn.Finished;
+
+
+        foreach (PlayerData player in players)
+        {
+            if (player.IsBust())
+            {
+                continue;
+            }
+            else if (dealer.IsBust() || player.hand.GetHandValue() > dealer.hand.GetHandValue())
+            {
+                // Player wins
+            }
+            else if (player.hand.GetHandValue() < dealer.hand.GetHandValue())
+            {
+                // Player loses
+            }
+            else
+            {
+                // Push
+            }
+        }
         EndRound();
     }
+
+
 
     public void EndRound()
     {
@@ -94,18 +135,55 @@ public class GameManager : NetworkBehaviour
     {
         currentTurn = Enum_Turn.dealing;
 
+        deck = new Deck();
+        deck.Initialize();
+
         foreach (PlayerData player in players)
         {
             player.Clear();
         }
-
-        deck = new Deck();
-        deck.Initialize();
 
         DealFirstCards();
 
         currentPlayerIndex = 0;
         currentTurn = Enum_Turn.player;
     }
+
+    public void PlayerHit(ulong clientId)
+    {
+        if (!IsServer) return;
+        if(currentTurn != Enum_Turn.player) return;
+
+        PlayerData player = GetPlayer(clientId);
+        if (player == null) return;
+
+        player.Hit(deck.Draw());
+
+        if (player.IsBust())
+        {
+            player.Stand();
+            NextTurn();
+        }
+
+    }
+
+
+    private PlayerData GetPlayer(ulong clientId)
+    {
+        return players.Find(p => p.clientId == clientId);
+    }
+
+    public void PlayerStand(ulong clientId)
+    {
+        if (!IsServer) return;
+        PlayerData player = GetPlayer(clientId);
+        if (player == null) return;
+        player.Stand();
+        NextTurn();
+    }
+
+
+
+
 
 }

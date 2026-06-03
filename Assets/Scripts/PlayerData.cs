@@ -7,7 +7,9 @@ public class PlayerData : NetworkBehaviour
     public Hand hand { get; private set; }
     public bool isStanding { get; private set; }
 
-    
+    public int HandValue => hand.GetHandValue();
+
+
     public PlayerData(ulong clientId)
     {
         this.clientId = clientId;
