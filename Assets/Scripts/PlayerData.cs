@@ -7,23 +7,19 @@ public class PlayerData : NetworkBehaviour
     public Hand hand { get; private set; }
     public bool isStanding { get; private set; }
 
-    public override void OnNetworkSpawn()
+    
+    public PlayerData(ulong clientId)
     {
-        if (!IsServer) return;
-
+        this.clientId = clientId;
         hand = new Hand();
         isStanding = false;
     }
 
 
-    [ServerRpc]
-    public void HitRpc()
+    public void Hit(Card card)
     {
-        if (!IsServer) return;
-        if (isStanding) return;
-
+        hand.AddCard(card);
     }
-
 
     public void Stand()
     {
@@ -36,6 +32,15 @@ public class PlayerData : NetworkBehaviour
         isStanding = false;
     }
 
+    public bool IsBust()
+    {
+        return hand.IsBust();
+    }
+
+    public bool HasBlackJack()
+    {
+        return hand.HasBlackJack();
+    }
 
 
 
