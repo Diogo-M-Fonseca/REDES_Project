@@ -16,20 +16,25 @@ public class GameManager : NetworkBehaviour
 
     private int currentPlayerIndex = 0;
 
-    public override void OnNetworkSpawn()
+    private void Awake()
     {
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
+        Instance = this;
+    }
 
+    public override void OnNetworkSpawn()
+    {
         if (!IsServer) return;
 
         deck = new Deck();
         deck.Initialize();
 
         currentTurn = Enum_Turn.waiting;
+        currentPlayerIndex = 0;
     }
 
     public void Registration(ulong clientId)

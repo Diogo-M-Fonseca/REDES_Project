@@ -1,7 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerData : NetworkBehaviour
+public class PlayerData 
 {
     private readonly ulong clientId;
     private readonly Hand hand = new();
