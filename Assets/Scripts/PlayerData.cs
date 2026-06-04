@@ -8,13 +8,14 @@ public class PlayerData : NetworkBehaviour
     private bool isStanding;
 
     public int HandValue => hand.GetHandValue();
+    public ulong ClientId => clientId;
+    public Hand Hand => hand;
+    public bool IsStanding => isStanding;
 
 
     public PlayerData(ulong clientId)
     {
         this.clientId = clientId;
-        hand = new Hand();
-        isStanding = false;
     }
 
 
@@ -43,8 +44,5 @@ public class PlayerData : NetworkBehaviour
     {
         return hand.HasBlackJack();
     }
-
-
-
 
 }
