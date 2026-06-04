@@ -13,8 +13,9 @@ public class GameManager : NetworkBehaviour
     private Enum_Turn currentTurn;
 
     private readonly List<PlayerData> players = new();
+    private readonly Hand dealerHand = new();
 
-    private int currentPlayerIndex = 0;
+    private int currentPlayerIndex;
 
     private void Awake()
     {
@@ -30,18 +31,14 @@ public class GameManager : NetworkBehaviour
     {
         if (!IsServer) return;
 
-        deck = new Deck();
-        deck.Initialize();
-
-        currentTurn = Enum_Turn.waiting;
-        currentPlayerIndex = 0;
+        StartRound();
     }
 
     public void Registration(ulong clientId)
     {
         if (!IsServer) return;
         
-        if (players.Exists(p => p.clientId == clientId)) return;
+        if (GetPlayer(clientId) != null) return;
 
         players.Add(new PlayerData(clientId));
 
@@ -51,16 +48,8 @@ public class GameManager : NetworkBehaviour
         }
     }
 
-    public PlayerData GetCurrentPlayer()
-    {
-        if (players.Count == 0) return null;
-        return players[currentPlayerIndex];
-    }
-
     public void NextTurn()
-    {
-        if (!IsServer) return;
-        
+    {  
         currentPlayerIndex++;
 
         if (currentPlayerIndex >= players.Count)
@@ -73,42 +62,40 @@ public class GameManager : NetworkBehaviour
     public void DealerTurn()
     {
         currentTurn = Enum_Turn.dealer;
+        SyncTurnClientRpc(currentTurn);
 
-        PlayerData dealer = new PlayerData(999); // Fake Id
-
-        dealer.Hit(deck.Draw());
-        dealer.Hit(deck.Draw());
-
-        while (dealer.HandValue < 17)
+        while (dealerHand.GetHandValue() < 17)
         {
-            dealer.Hit(deck.Draw());   
+            Card card = deck.Draw();
+            dealerHand.AddCard(card);
+            DealerCardDrawnClientRpc(card);
         }
-        Conclusion(dealer);
+
+        Conclusion();
     }
 
 
-    public void Conclusion(PlayerData dealer)
+    public void Conclusion()
     {
         currentTurn = Enum_Turn.Finished;
-
+        SyncTurnClientRpc(currentTurn);
 
         foreach (PlayerData player in players)
         {
-            if (player.IsBust())
+            bool playerBust = player.IsBust();
+            bool dealerBust = dealerHand.IsBust();
+
+            if (!playerBust && (dealerBust||player.HandValue > dealerHand.GetHandValue()))
             {
-                continue;
+                OnPlayerWinClientRpc(player.ClientId);
             }
-            else if (dealer.IsBust() || player.hand.GetHandValue() > dealer.hand.GetHandValue())
+            else if (playerBust || player.HandValue < dealerHand.GetHandValue())
             {
-                // Player wins
-            }
-            else if (player.hand.GetHandValue() < dealer.hand.GetHandValue())
-            {
-                // Player loses
+                OnPlayerLoseClientRpc(player.ClientId);
             }
             else
             {
-                // Push
+                OnPlayerPushClientRpc(player.ClientId);
             }
         }
         EndRound();
@@ -124,6 +111,7 @@ public class GameManager : NetworkBehaviour
         {
             player.Clear();
         }
+        dealerHand.Clear();
     }
 
 
@@ -131,27 +119,43 @@ public class GameManager : NetworkBehaviour
     {
         foreach (PlayerData player in players)
         {
-            player.Hit(deck.Draw());
-            player.Hit(deck.Draw());
+            GiveCardToPlayer(player);
+            GiveCardToPlayer(player);
         }
+
+        dealerHand.AddCard(deck.Draw());
+        dealerHand.AddCard(deck.Draw());
+
+        
     }
 
     public void StartRound()
     {
-        currentTurn = Enum_Turn.dealing;
-
         deck = new Deck();
         deck.Initialize();
-
+        dealerHand.Clear();
         foreach (PlayerData player in players)
         {
             player.Clear();
         }
 
+        currentPlayerIndex = 0;
+        currentTurn = Enum_Turn.dealing;
+
+        SyncTurnClientRpc(currentTurn);
+
         DealFirstCards();
 
-        currentPlayerIndex = 0;
         currentTurn = Enum_Turn.player;
+        SyncTurnClientRpc(currentTurn);
+
+    }
+
+    private void GiveCardToPlayer(PlayerData player)
+    {
+        Card card = deck.Draw();
+        player.Hit(card);
+        SendCardClientRpc(player.ClientId, card);
     }
 
     public void PlayerHit(ulong clientId)
@@ -162,7 +166,10 @@ public class GameManager : NetworkBehaviour
         PlayerData player = GetPlayer(clientId);
         if (player == null) return;
 
-        player.Hit(deck.Draw());
+        Card card = deck.Draw();
+        player.Hit(card);
+
+        SendCardClientRpc(player.ClientId, card);
 
         if (player.IsBust())
         {
@@ -175,20 +182,54 @@ public class GameManager : NetworkBehaviour
 
     private PlayerData GetPlayer(ulong clientId)
     {
-        return players.Find(p => p.clientId == clientId);
+        return players.Find(p => p.ClientId == clientId);
     }
 
     public void PlayerStand(ulong clientId)
     {
         if (!IsServer) return;
+
         PlayerData player = GetPlayer(clientId);
         if (player == null) return;
+
         player.Stand();
         NextTurn();
     }
 
+    [ClientRpc]
+    private void SyncTurnClientRpc(Enum_Turn turn)
+    {
+        Debug.Log($"Turn changed to: {turn}");
+    }
+
+    [ClientRpc]
+    private void SendCardClientRpc(ulong clientId, Card card)
+    {
+        Debug.Log($"Card sent to client {clientId}: {card.Value} of {card.Suit}");
+    }
+
+    [ClientRpc]
+    private void DealerCardDrawnClientRpc(Card card)
+    {
+        Debug.Log($"Dealer drew: {card.Value} of {card.Suit}");
+    }
 
 
+    [ClientRpc]
+    private void OnPlayerWinClientRpc(ulong clientId)
+    {
+        Debug.Log($"Player {clientId} wins!");
+    }
+    
+    [ClientRpc]
+    private void OnPlayerLoseClientRpc(ulong clientId)
+    {
+        Debug.Log($"Player {clientId} loses!");
+    }
 
-
+    [ClientRpc]
+    private void OnPlayerPushClientRpc(ulong clientId)
+    {
+        Debug.Log($"Player {clientId} pushes!");
+    }
 }
