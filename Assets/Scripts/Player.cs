@@ -3,18 +3,16 @@ using UnityEngine;
 
 public class Player : NetworkBehaviour
 {
-    [ServerRpc]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void HitServerRpc()
     {
-        if (!IsOwner) return;
 
         GameManager.Instance.PlayerHit(OwnerClientId);
     }
 
-    [ServerRpc]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void StandServerRpc()
     {
-        if (!IsOwner) return;
 
         GameManager.Instance.PlayerStand(OwnerClientId);
     }

@@ -16,6 +16,7 @@ public class GameManager : NetworkBehaviour
     private readonly Hand dealerHand = new();
 
     private int currentPlayerIndex;
+    private bool roundActive;
 
     private void Awake()
     {
@@ -30,8 +31,7 @@ public class GameManager : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         if (!IsServer) return;
-
-        StartRound();
+        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
     }
 
     public void Registration(ulong clientId)
@@ -42,7 +42,7 @@ public class GameManager : NetworkBehaviour
 
         players.Add(new PlayerData(clientId));
 
-        if (players.Count >= 2)
+        if (players.Count >= 2 && !roundActive)
         {
             StartRound();
         }
@@ -106,6 +106,7 @@ public class GameManager : NetworkBehaviour
     public void EndRound()
     {
         currentPlayerIndex = 0;
+        roundActive = false;
 
         foreach (PlayerData player in players)
         {
@@ -124,13 +125,14 @@ public class GameManager : NetworkBehaviour
         }
 
         dealerHand.AddCard(deck.Draw());
-        dealerHand.AddCard(deck.Draw());
-
-        
+        dealerHand.AddCard(deck.Draw()); 
     }
 
     public void StartRound()
     {
+        if (roundActive) return;
+        roundActive = true;
+
         deck = new Deck();
         deck.Initialize();
         dealerHand.Clear();
@@ -166,6 +168,8 @@ public class GameManager : NetworkBehaviour
         PlayerData player = GetPlayer(clientId);
         if (player == null) return;
 
+        if (players[currentPlayerIndex].ClientId != clientId) return;
+
         Card card = deck.Draw();
         player.Hit(card);
 
@@ -188,12 +192,20 @@ public class GameManager : NetworkBehaviour
     public void PlayerStand(ulong clientId)
     {
         if (!IsServer) return;
+        if(currentTurn != Enum_Turn.player) return;
 
         PlayerData player = GetPlayer(clientId);
         if (player == null) return;
 
+        if(players[currentPlayerIndex].ClientId != clientId) return;
+
         player.Stand();
         NextTurn();
+    }
+
+    private void OnClientConnected(ulong clientId)
+    {
+        Registration(clientId);
     }
 
     [ClientRpc]
