@@ -3,9 +3,9 @@ using UnityEngine;
 
 public class PlayerData : NetworkBehaviour
 {
-    public ulong clientId { get; private set; }
-    public Hand hand { get; private set; }
-    public bool isStanding { get; private set; }
+    private readonly ulong clientId;
+    private readonly Hand hand = new();
+    private bool isStanding;
 
     public int HandValue => hand.GetHandValue();
 
