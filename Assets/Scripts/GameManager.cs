@@ -10,7 +10,10 @@ public class GameManager : NetworkBehaviour
 
     private Deck deck;
 
-    private Enum_Turn currentTurn;
+    public NetworkVariable<Enum_Turn> CurrentTurn = new(
+        Enum_Turn.waiting,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
 
     private readonly List<PlayerData> players = new();
     private readonly Hand dealerHand = new();
@@ -57,18 +60,19 @@ public class GameManager : NetworkBehaviour
             DealerTurn();
             return;
         }
+
+        CurrentTurn.Value = Enum_Turn.player;
     }
 
     public void DealerTurn()
     {
-        currentTurn = Enum_Turn.dealer;
-        SyncTurnClientRpc(currentTurn);
+        CurrentTurn.Value = Enum_Turn.dealer;
 
         while (dealerHand.GetHandValue() < 17)
         {
             Card card = deck.Draw();
             dealerHand.AddCard(card);
-            DealerCardDrawnClientRpc(card);
+            DealerCardDrawnClientRpc(dealerHand.GetHandValue());
         }
 
         Conclusion();
@@ -77,8 +81,7 @@ public class GameManager : NetworkBehaviour
 
     public void Conclusion()
     {
-        currentTurn = Enum_Turn.Finished;
-        SyncTurnClientRpc(currentTurn);
+        CurrentTurn.Value = Enum_Turn.Finished;
 
         foreach (PlayerData player in players)
         {
@@ -98,6 +101,7 @@ public class GameManager : NetworkBehaviour
                 OnPlayerPushClientRpc(player.ClientId);
             }
         }
+
         EndRound();
     }
 
@@ -105,14 +109,16 @@ public class GameManager : NetworkBehaviour
 
     public void EndRound()
     {
-        currentPlayerIndex = 0;
         roundActive = false;
+        currentPlayerIndex = 0;
 
         foreach (PlayerData player in players)
         {
             player.Clear();
         }
         dealerHand.Clear();
+
+        CurrentTurn.Value = Enum_Turn.waiting;
     }
 
 
@@ -126,30 +132,30 @@ public class GameManager : NetworkBehaviour
 
         dealerHand.AddCard(deck.Draw());
         dealerHand.AddCard(deck.Draw()); 
+
+        DealerCardDrawnClientRpc(dealerHand.GetHandValue());
     }
 
     public void StartRound()
     {
-        if (roundActive) return;
+        if (!IsServer || roundActive) return;
         roundActive = true;
 
         deck = new Deck();
         deck.Initialize();
         dealerHand.Clear();
+
         foreach (PlayerData player in players)
         {
             player.Clear();
         }
 
         currentPlayerIndex = 0;
-        currentTurn = Enum_Turn.dealing;
-
-        SyncTurnClientRpc(currentTurn);
+        CurrentTurn.Value = Enum_Turn.dealing;
 
         DealFirstCards();
 
-        currentTurn = Enum_Turn.player;
-        SyncTurnClientRpc(currentTurn);
+        CurrentTurn.Value = Enum_Turn.player;
 
     }
 
@@ -163,7 +169,7 @@ public class GameManager : NetworkBehaviour
     public void PlayerHit(ulong clientId)
     {
         if (!IsServer) return;
-        if(currentTurn != Enum_Turn.player) return;
+        if(CurrentTurn.Value != Enum_Turn.player) return;
 
         PlayerData player = GetPlayer(clientId);
         if (player == null) return;
@@ -192,7 +198,7 @@ public class GameManager : NetworkBehaviour
     public void PlayerStand(ulong clientId)
     {
         if (!IsServer) return;
-        if(currentTurn != Enum_Turn.player) return;
+        if(CurrentTurn.Value != Enum_Turn.player) return;
 
         PlayerData player = GetPlayer(clientId);
         if (player == null) return;
@@ -209,15 +215,11 @@ public class GameManager : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void SyncTurnClientRpc(Enum_Turn turn)
-    {
-        Debug.Log($"Turn changed to: {turn}");
-    }
-
-    [ClientRpc]
     private void SendCardClientRpc(ulong clientId, Card card)
     {
-        Debug.Log($"Card sent to client {clientId}: {card.Value} of {card.Suit}");
+        if (NetworkManager.Singleton.LocalClientId != clientId) return;
+
+
     }
 
     [ClientRpc]
@@ -230,18 +232,24 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void OnPlayerWinClientRpc(ulong clientId)
     {
+        if (NetworkManager.Singleton.LocalClientId != clientId) return;
+
         Debug.Log($"Player {clientId} wins!");
     }
     
     [ClientRpc]
     private void OnPlayerLoseClientRpc(ulong clientId)
     {
+        if (NetworkManager.Singleton.LocalClientId != clientId) return;
+
         Debug.Log($"Player {clientId} loses!");
     }
 
     [ClientRpc]
     private void OnPlayerPushClientRpc(ulong clientId)
     {
+        if (NetworkManager.Singleton.LocalClientId != clientId) return;
+
         Debug.Log($"Player {clientId} pushes!");
     }
 }
