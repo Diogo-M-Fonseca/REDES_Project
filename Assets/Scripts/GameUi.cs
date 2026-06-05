@@ -22,6 +22,8 @@ public class GameUi : MonoBehaviour
     private readonly Dictionary<ulong, Transform> playerSpots = new();
     private readonly Dictionary<ulong, int> cardCount = new();
 
+    private GameManager gm;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -34,7 +36,14 @@ public class GameUi : MonoBehaviour
     }
     private void Start()
     {
-        
+        gm = GameManager.Instance;
+
+        if (gm != null)
+        {
+            gm.CurrentTurn.OnValueChanged += OnTurnChanged;
+            SetupPlayers();
+        }
+
     }
 
     private void SetupPlayers()
@@ -130,5 +139,11 @@ public class GameUi : MonoBehaviour
         }
 
         ShowResult(string.Empty);
+    }
+
+    public void Hit()
+    {
+        if(Player.LocalPlayer != null) return;
+        NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<Player>().HitServerRpc();
     }
 }

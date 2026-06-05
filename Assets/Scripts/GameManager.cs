@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 public class GameManager : NetworkBehaviour
 {
-    public static GameManager Instance { get; private set; }
+    public static GameManager Instance;
 
     private Deck deck;
 
@@ -233,6 +233,26 @@ public class GameManager : NetworkBehaviour
 
     private void OnClientConnected(ulong clientId)
     {
+        if(!IsServer) return;
+
+        if (GetPlayer(clientId) != null) return;
+
+        players.Add(new PlayerData(clientId));
+
+        if (players.Count == 1)
+        {
+            Player1Id.Value = clientId;
+        }
+        else if (players.Count == 2)
+        {
+            Player2Id.Value = clientId;
+        }
+
+        if (players.Count == 2 && !roundActive)
+        {
+            StartRound();
+        }
+
         Registration(clientId);
     }
 
