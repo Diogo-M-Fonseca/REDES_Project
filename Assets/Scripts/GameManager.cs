@@ -118,6 +118,8 @@ public class GameManager : NetworkBehaviour
         }
         dealerHand.Clear();
 
+        //Rpc para mandar ui limpar a mesa
+
         CurrentTurn.Value = Enum_Turn.waiting;
     }
 
@@ -214,6 +216,16 @@ public class GameManager : NetworkBehaviour
         Registration(clientId);
     }
 
+    public bool IsPlayerTurn(ulong clientId)
+    {
+        if (players.Count == 0) return false;
+
+        if (currentPlayerIndex >= players.Count) return false;
+
+        return CurrentTurn.Value == Enum_Turn.player && players[currentPlayerIndex].ClientId == clientId;
+    }
+
+
     [ClientRpc]
     private void SendCardClientRpc(ulong clientId, Card card)
     {
@@ -234,7 +246,7 @@ public class GameManager : NetworkBehaviour
     {
         if (NetworkManager.Singleton.LocalClientId != clientId) return;
 
-        Debug.Log($"Player {clientId} wins!");
+        GameUi.Instance.ShowResult("YOU WIN");
     }
     
     [ClientRpc]
@@ -242,7 +254,7 @@ public class GameManager : NetworkBehaviour
     {
         if (NetworkManager.Singleton.LocalClientId != clientId) return;
 
-        Debug.Log($"Player {clientId} loses!");
+        GameUi.Instance.ShowResult("YOU LOSE");
     }
 
     [ClientRpc]
@@ -250,6 +262,6 @@ public class GameManager : NetworkBehaviour
     {
         if (NetworkManager.Singleton.LocalClientId != clientId) return;
 
-        Debug.Log($"Player {clientId} pushes!");
+        GameUi.Instance.ShowResult("YOU LOSE");
     }
 }
