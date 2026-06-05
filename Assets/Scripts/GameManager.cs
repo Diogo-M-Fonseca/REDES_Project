@@ -21,6 +21,16 @@ public class GameManager : NetworkBehaviour
     private int currentPlayerIndex;
     private bool roundActive;
 
+    public NetworkVariable<ulong> Player1Id = new(
+        ulong.MaxValue,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    public NetworkVariable<ulong> Player2Id = new(
+        ulong.MaxValue,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -45,7 +55,16 @@ public class GameManager : NetworkBehaviour
 
         players.Add(new PlayerData(clientId));
 
-        if (players.Count >= 2 && !roundActive)
+        if (players.Count == 1)
+        {
+            Player1Id.Value = clientId;
+        }
+        else if (players.Count == 2)
+        {
+            Player2Id.Value = clientId;
+        }
+
+        if (players.Count == 2 && !roundActive)
         {
             StartRound();
         }
@@ -60,8 +79,6 @@ public class GameManager : NetworkBehaviour
             DealerTurn();
             return;
         }
-
-        CurrentTurn.Value = Enum_Turn.player;
     }
 
     public void DealerTurn()
@@ -72,7 +89,7 @@ public class GameManager : NetworkBehaviour
         {
             Card card = deck.Draw();
             dealerHand.AddCard(card);
-            DealerCardDrawnClientRpc(dealerHand.GetHandValue());
+            DealerCardDrawnClientRpc(card);
         }
 
         Conclusion();
@@ -118,7 +135,7 @@ public class GameManager : NetworkBehaviour
         }
         dealerHand.Clear();
 
-        //Rpc para mandar ui limpar a mesa
+        ClearTableClientRpc();
 
         CurrentTurn.Value = Enum_Turn.waiting;
     }
@@ -132,10 +149,13 @@ public class GameManager : NetworkBehaviour
             GiveCardToPlayer(player);
         }
 
-        dealerHand.AddCard(deck.Draw());
-        dealerHand.AddCard(deck.Draw()); 
+        Card dealerCard1 = deck.Draw();
+        dealerHand.AddCard(dealerCard1);
+        DealerCardDrawnClientRpc(dealerCard1);
 
-        DealerCardDrawnClientRpc(dealerHand.GetHandValue());
+        Card dealerCard2 = deck.Draw();
+        dealerHand.AddCard(dealerCard2);
+        DealerCardDrawnClientRpc(dealerCard2);
     }
 
     public void StartRound()
@@ -231,15 +251,22 @@ public class GameManager : NetworkBehaviour
     {
         if (NetworkManager.Singleton.LocalClientId != clientId) return;
 
-
+        GameUi.Instance.AddCardToPlayer(clientId, card);
     }
 
     [ClientRpc]
     private void DealerCardDrawnClientRpc(Card card)
     {
         Debug.Log($"Dealer drew: {card.Value} of {card.Suit}");
+
+        GameUi.Instance.AddCardToDealer(card);
     }
 
+    [ClientRpc]
+    private void ClearTableClientRpc()
+    {
+        GameUi.Instance.ClearTable();
+    }
 
     [ClientRpc]
     private void OnPlayerWinClientRpc(ulong clientId)
