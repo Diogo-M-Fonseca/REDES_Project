@@ -8,20 +8,33 @@ public class GameUi : MonoBehaviour
 {
     public static GameUi Instance;
 
+    [Header("Card prefab")]
     [SerializeField] private GameObject cardPrefab;
 
+    [Header("Spots")]
     [SerializeField] private Transform dealerSpot;
     [SerializeField] private Transform player1Spot;
     [SerializeField] private Transform player2Spot;
 
+    [Header("Buttons")]
     [SerializeField] private GameObject hitButton;
     [SerializeField] private GameObject standButton;
+    [SerializeField] private GameObject closeGameOverButton;
 
-    [SerializeField] private TMP_Text turn;
-    [SerializeField] private TMP_Text result;
+    [Header("Texts")]
     [SerializeField] private TMP_Text player1Value;
     [SerializeField] private TMP_Text player2Value;
     [SerializeField] private TMP_Text dealerValue;
+    [SerializeField] private TMP_Text gameOverTitle;
+    [SerializeField] private TMP_Text gameOverDescription;
+
+    [Header("GameOver Panel")]
+    [SerializeField] private GameObject gameOverPanel;
+
+    [Header("Turn Arrows")]
+    [SerializeField] private GameObject player1TurnArrow;
+    [SerializeField] private GameObject player2TurnArrow;
+    [SerializeField] private GameObject dealerTurnArrow;
 
     private readonly Dictionary<ulong, Transform> playerSpots = new();
     private readonly Dictionary<ulong, int> cardCount = new();
@@ -85,6 +98,9 @@ public class GameUi : MonoBehaviour
 
     private void OnCurrentPlayerIndexChanged(int oldIndex, int newIndex)
     {
+
+        UpdateTurnArrow();
+
         if (gm == null) return;
         bool myTurn = gm.IsPlayerTurn(NetworkManager.Singleton.LocalClientId);
         hitButton.SetActive(myTurn);
@@ -130,7 +146,7 @@ public class GameUi : MonoBehaviour
 
     private void OnTurnChanged(Enum_Turn oldTurn, Enum_Turn newTurn)
     {
-        turn.text = $"Turn: {newTurn}";
+        UpdateTurnArrow();
         
         if (gm == null) gm = GameManager.Instance;
         if (gm == null) return;
@@ -139,6 +155,40 @@ public class GameUi : MonoBehaviour
 
         hitButton.SetActive(myTurn);
         standButton.SetActive(myTurn);
+
+        if (newTurn == Enum_Turn.dealing || newTurn == Enum_Turn.player)
+        {
+            GameOverPanelClose();
+        }
+    }
+
+    private void UpdateTurnArrow()
+    {
+        if (gm == null) return;
+
+        player1TurnArrow.SetActive(false);
+        player2TurnArrow.SetActive(false);
+        dealerTurnArrow.SetActive(false);
+
+        Enum_Turn turn = gm.CurrentTurn.Value;
+
+        if (turn == Enum_Turn.player)
+        {
+            int currentIndex = gm.CurrentPlayerIndex.Value;
+
+            if (currentIndex == 0 && player1TurnArrow != null)
+            {
+                player1TurnArrow.SetActive(true);
+            }
+            else if (currentIndex == 1 && player2TurnArrow != null)
+            {
+                player2TurnArrow.SetActive(true);
+            }
+        }
+        else if (turn == Enum_Turn.dealer && dealerTurnArrow != null)
+        {
+            dealerTurnArrow.SetActive(true);
+        }
     }
 
     public void AddCardToPlayer(ulong playerId, Card card)
@@ -192,9 +242,16 @@ public class GameUi : MonoBehaviour
         cardObj.GetComponent<CardView>().SetSprite(card);
     }
 
-    public void ShowResult(string resultText)
+    public void ShowResult(string title, string resultText)
     {
-        result.text = resultText;
+        gameOverPanel.SetActive(true);
+        gameOverTitle.text = title;
+        gameOverDescription.text = resultText;
+    }
+
+    public void GameOverPanelClose()
+    {
+        gameOverPanel.SetActive(false);
     }
 
     public void ClearSpot(Transform spot)
@@ -216,8 +273,6 @@ public class GameUi : MonoBehaviour
         {
             cardCount.Add(clientId, 0);
         }
-
-        ShowResult(string.Empty);
     }
 
     public void Hit()

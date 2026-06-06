@@ -125,23 +125,59 @@ public class GameManager : NetworkBehaviour
             bool playerBust = player.IsBust();
             bool dealerBust = dealerHand.IsBust();
 
+            string dealerReason;
+            string resultType;
+
             if (!playerBust && (dealerBust||player.HandValue > dealerHand.GetHandValue()))
             {
-                OnPlayerWinClientRpc(player.ClientId);
+                dealerReason = dealerBust ? "Dealer busted! You win." : "You have a higher score.";
+                resultType = "win";
             }
             else if (playerBust || player.HandValue < dealerHand.GetHandValue())
             {
-                OnPlayerLoseClientRpc(player.ClientId);
+                dealerReason = playerBust ? "You busted! You lose." : "Dealer have a higher score.";
+                resultType= "lose";
             }
             else
             {
-                OnPlayerPushClientRpc(player.ClientId);
+                dealerReason = "DRAW";
+                resultType = "push";
             }
+            string pvpMessage = GetPvpMessage(player);
+            string completeMessage = dealerReason + "\n\n" + pvpMessage;
+
+            if(resultType == "win") 
+                OnPlayerWinClientRpc(player.ClientId, completeMessage);
+            if(resultType == "lose")
+                OnPlayerLoseClientRpc(player.ClientId, completeMessage);
+            else
+                OnPlayerPushClientRpc(player.ClientId, completeMessage);
         }
 
         EndRound();
     }
 
+
+    private string GetPvpMessage(PlayerData Currentplayer)
+    {
+        if (players.Count < 2) return "Waiting for other player.";
+
+       PlayerData other = players[0] == Currentplayer ? players[1] : players[0];
+       bool currentBust = Currentplayer.IsBust();
+       bool otherBust = other.IsBust();
+
+        if (currentBust && otherBust) return "Both players busted - pvp draw.";
+        if (currentBust) return "You busted - opponent wins pvp.";
+        if (otherBust) return "Opponent busted - you win pvp";
+
+        int currentVal = Currentplayer.HandValue;
+        int otherVal = other.HandValue;
+
+        if (currentVal > otherVal) return "You beat the opponent";
+        if (currentVal < otherVal) return "Opponent beats you";
+
+        return "pvp draw - same score";
+    }
 
 
     public void EndRound()
@@ -348,26 +384,26 @@ public class GameManager : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void OnPlayerWinClientRpc(ulong clientId)
+    private void OnPlayerWinClientRpc(ulong clientId, string reason)
     {
         if (NetworkManager.Singleton.LocalClientId != clientId) return;
 
-        GameUi.Instance.ShowResult("YOU WIN");
+        GameUi.Instance.ShowResult("YOU WIN", reason);
     }
     
     [ClientRpc]
-    private void OnPlayerLoseClientRpc(ulong clientId)
+    private void OnPlayerLoseClientRpc(ulong clientId, string reason)
     {
         if (NetworkManager.Singleton.LocalClientId != clientId) return;
 
-        GameUi.Instance.ShowResult("YOU LOSE");
+        GameUi.Instance.ShowResult("YOU LOST", reason);
     }
 
     [ClientRpc]
-    private void OnPlayerPushClientRpc(ulong clientId)
+    private void OnPlayerPushClientRpc(ulong clientId, string reason)
     {
         if (NetworkManager.Singleton.LocalClientId != clientId) return;
 
-        GameUi.Instance.ShowResult("YOU PUSH");
+        GameUi.Instance.ShowResult("YOU PUSH", reason);
     }
 }
