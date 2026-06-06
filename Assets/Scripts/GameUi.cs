@@ -32,6 +32,7 @@ public class GameUi : MonoBehaviour
             return;
         }
         Instance = this;
+        DontDestroyOnLoad(gameObject);
 
     }
     private void Start()
@@ -41,40 +42,50 @@ public class GameUi : MonoBehaviour
         if (gm != null)
         {
             gm.CurrentTurn.OnValueChanged += OnTurnChanged;
-            SetupPlayers();
+
+            // Forçar setup após 1 segundo (dar tempo para IDs serem configurados)
+            Invoke(nameof(DelayedSetup), 0.5f);
         }
 
     }
 
+    //so pra teste 
+    private void DelayedSetup()
+    {
+        SetupPlayers();
+    }
+
     private void SetupPlayers()
     {
-        var clients = NetworkManager.Singleton.ConnectedClientsIds;
+        if (gm == null) gm = GameManager.Instance;
+        if (gm == null) return;
 
-        int index = 0;
+        playerSpots.Clear();
+        cardCount.Clear();
 
-        foreach (ulong clientId in clients)
+        if (gm.Player1Id.Value != ulong.MaxValue)
         {
-            if (index == 0)
-            {
-                playerSpots.Add(clientId, player1Spot);
-            }
-            else if (index == 1)
-            {
-                playerSpots.Add(clientId, player2Spot);
-            }
-
-            cardCount.Add(clientId, 0);
-
-            index++;
+            playerSpots[gm.Player1Id.Value] = player1Spot;
+            cardCount[gm.Player1Id.Value] = 0;
+            Debug.Log($"[UI] Player 1 ({gm.Player1Id.Value}) assigned to spot 1");
         }
 
+        if (gm.Player2Id.Value != ulong.MaxValue)
+        {
+            playerSpots[gm.Player2Id.Value] = player2Spot;
+            cardCount[gm.Player2Id.Value] = 0;
+            Debug.Log($"[UI] Player 2 ({gm.Player2Id.Value}) assigned to spot 2");
+        }
     }
 
     private void OnTurnChanged(Enum_Turn oldTurn, Enum_Turn newTurn)
     {
         turn.text = $"Turn: {newTurn}";
         
-        bool myTurn = GameManager.Instance.IsPlayerTurn(NetworkManager.Singleton.LocalClientId);
+        if (gm == null) gm = GameManager.Instance;
+        if (gm == null) return;
+
+        bool myTurn = gm.IsPlayerTurn(NetworkManager.Singleton.LocalClientId);
 
         hitButton.SetActive(myTurn);
         standButton.SetActive(myTurn);
@@ -84,6 +95,7 @@ public class GameUi : MonoBehaviour
     {
         if (!playerSpots.ContainsKey(playerId))
         {
+            Debug.LogWarning($"[UI] No spot found for player {playerId}");
             return;
         }
 
@@ -143,7 +155,13 @@ public class GameUi : MonoBehaviour
 
     public void Hit()
     {
-        if(Player.LocalPlayer != null) return;
+        if(Player.LocalPlayer == null) return;
         NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<Player>().HitServerRpc();
+    }
+
+    public void Stand()
+    {
+        if (Player.LocalPlayer == null) return;
+        NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<Player>().StandServerRpc();
     }
 }

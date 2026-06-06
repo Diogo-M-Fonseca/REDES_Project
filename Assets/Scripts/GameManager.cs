@@ -45,6 +45,7 @@ public class GameManager : NetworkBehaviour
     {
         if (!IsServer) return;
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
     }
 
     public void Registration(ulong clientId)
@@ -233,27 +234,23 @@ public class GameManager : NetworkBehaviour
 
     private void OnClientConnected(ulong clientId)
     {
-        if(!IsServer) return;
-
-        if (GetPlayer(clientId) != null) return;
-
-        players.Add(new PlayerData(clientId));
-
-        if (players.Count == 1)
-        {
-            Player1Id.Value = clientId;
-        }
-        else if (players.Count == 2)
-        {
-            Player2Id.Value = clientId;
-        }
-
-        if (players.Count == 2 && !roundActive)
-        {
-            StartRound();
-        }
-
         Registration(clientId);
+    }
+
+    private void OnClientDisconnected(ulong clientId)
+    {
+        if (!IsServer) return;
+
+        PlayerData player = GetPlayer(clientId);
+        if (player != null)
+        {
+            players.Remove(player);
+        }
+
+        if (roundActive)
+        {
+            EndRound();
+        }
     }
 
     public bool IsPlayerTurn(ulong clientId)
@@ -269,7 +266,8 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void SendCardClientRpc(ulong clientId, Card card)
     {
-        if (NetworkManager.Singleton.LocalClientId != clientId) return;
+        Debug.Log($"Player {clientId} drew: {card.Value} of {card.Suit}");
+        Debug.Log($"[CLIENT RPC] Adding card for player {clientId} to UI");
 
         GameUi.Instance.AddCardToPlayer(clientId, card);
     }
@@ -309,6 +307,6 @@ public class GameManager : NetworkBehaviour
     {
         if (NetworkManager.Singleton.LocalClientId != clientId) return;
 
-        GameUi.Instance.ShowResult("YOU LOSE");
+        GameUi.Instance.ShowResult("YOU PUSH");
     }
 }
