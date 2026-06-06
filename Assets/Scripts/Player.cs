@@ -14,7 +14,6 @@ public class Player : NetworkBehaviour
     }
 
 
-
     [ServerRpc]
     public void HitServerRpc()
     {
@@ -27,5 +26,11 @@ public class Player : NetworkBehaviour
     {
 
         GameManager.Instance.PlayerStand(OwnerClientId);
+    }
+
+    [ServerRpc]
+    public void ExitGameServerRpc()
+    {
+        GameManager.Instance.ExitGameServerRpc(OwnerClientId);
     }
 }

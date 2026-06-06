@@ -20,6 +20,7 @@ public class GameUi : MonoBehaviour
     [SerializeField] private GameObject hitButton;
     [SerializeField] private GameObject standButton;
     [SerializeField] private GameObject closeGameOverButton;
+    [SerializeField] private GameObject playAgainButton;
 
     [Header("Texts")]
     [SerializeField] private TMP_Text player1Value;
@@ -147,7 +148,12 @@ public class GameUi : MonoBehaviour
     private void OnTurnChanged(Enum_Turn oldTurn, Enum_Turn newTurn)
     {
         UpdateTurnArrow();
-        
+
+        if (newTurn == Enum_Turn.dealer && dealerTurnArrow != null)
+        {
+            GameOverPanelClose();
+        }
+
         if (gm == null) gm = GameManager.Instance;
         if (gm == null) return;
 
@@ -160,6 +166,7 @@ public class GameUi : MonoBehaviour
         {
             GameOverPanelClose();
         }
+
     }
 
     private void UpdateTurnArrow()
@@ -196,7 +203,6 @@ public class GameUi : MonoBehaviour
         if (!isReady)
         {
             pendingCards.Enqueue((playerId, card));
-            Debug.Log($"[UI] Not ready yet");
             return;
         }
 
@@ -210,9 +216,11 @@ public class GameUi : MonoBehaviour
 
         GameObject cardObj = Instantiate(cardPrefab);
 
-        float offset = cardCount[playerId] * 0.5f;
+        cardObj.transform.SetParent(spot);
 
-        cardObj.transform.position = spot.position + Vector3.right * offset;
+        float offset = cardCount[playerId] * 1f;
+
+        cardObj.transform.localPosition = Vector3.right * offset ;
 
         cardObj.GetComponent<CardView>().SetSprite(card);
 
@@ -233,12 +241,13 @@ public class GameUi : MonoBehaviour
     public void AddCardToDealer(Card card)
     {
         GameObject cardObj = Instantiate(cardPrefab);
+        cardObj.transform.SetParent(dealerSpot);
 
         int dealerCards = dealerSpot.childCount;
 
-        float offset = dealerCards * 0.5f;
+        float offset = dealerCards * 1f;
 
-        cardObj.transform.position = dealerSpot.position + Vector3.right * offset;
+        cardObj.transform.localPosition = Vector3.right * offset;
         cardObj.GetComponent<CardView>().SetSprite(card);
     }
 
@@ -247,12 +256,55 @@ public class GameUi : MonoBehaviour
         gameOverPanel.SetActive(true);
         gameOverTitle.text = title;
         gameOverDescription.text = resultText;
+        playAgainButton.SetActive(true);
+        closeGameOverButton.SetActive(true);
     }
 
     public void GameOverPanelClose()
     {
         gameOverPanel.SetActive(false);
+        playAgainButton.SetActive(false);
+        closeGameOverButton.SetActive(false);
     }
+
+
+    public void PlayAgain()
+    {
+        if(gm != null && Player.LocalPlayer != null)
+        {
+            gm.PlayAgainServerRpc(NetworkManager.Singleton.LocalClientId);
+            playAgainButton.SetActive(false);
+        }
+    }
+
+    public void Exit()
+    {
+        if (NetworkManager.Singleton.IsServer && !NetworkManager.Singleton.IsClient)
+        {
+            NetworkManager.Singleton.Shutdown();
+            Application.Quit();
+        }
+        else
+        {
+            if (Player.LocalPlayer != null)
+            {
+                Player.LocalPlayer.ExitGameServerRpc();
+            }
+
+            Invoke(nameof(QuitGameLocally), 0.2f);
+        }
+    }
+
+    public void QuitGameLocally()
+    {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsClient)
+        {
+            NetworkManager.Singleton.Shutdown();
+        }
+
+        Application.Quit();
+    }
+
 
     public void ClearSpot(Transform spot)
     {

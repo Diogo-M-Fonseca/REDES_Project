@@ -49,6 +49,10 @@ public class GameManager : NetworkBehaviour
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
 
+    private HashSet<ulong> readyToPlayAgain = new HashSet<ulong>();
+
+
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -218,8 +222,12 @@ public class GameManager : NetworkBehaviour
 
     public void StartRound()
     {
+        readyToPlayAgain.Clear();
+
         if (!IsServer || roundActive) return;
         roundActive = true;
+
+        ClearTableClientRpc();
 
         Player1HandValue.Value = 0;
         Player2HandValue.Value = 0;
@@ -335,6 +343,8 @@ public class GameManager : NetworkBehaviour
         {
             EndRound();
         }
+
+        NotifyOpponentExitClientRpc(clientId);
     }
 
     public bool IsPlayerTurn(ulong clientId)
@@ -359,6 +369,25 @@ public class GameManager : NetworkBehaviour
         return players[CurrentPlayerIndex.Value].ClientId == clientId;
     }
 
+
+    public void HandlePlayerExit(ulong clientId)
+    {
+        if (!IsServer) return;
+
+        PlayerData player = GetPlayer(clientId);
+        if (player != null)
+        {
+            players.Remove(player);
+        }
+
+        if (roundActive)
+        {
+            EndRound();
+        }
+
+        NotifyOpponentExitClientRpc(clientId);
+
+    }
 
     [ClientRpc]
     private void SendCardClientRpc(ulong clientId, Card card)
@@ -405,5 +434,33 @@ public class GameManager : NetworkBehaviour
         if (NetworkManager.Singleton.LocalClientId != clientId) return;
 
         GameUi.Instance.ShowResult("YOU PUSH", reason);
+    }
+
+    [ClientRpc]
+    private void NotifyOpponentExitClientRpc(ulong exitedClientId)
+    {
+        if (NetworkManager.Singleton.LocalClientId != exitedClientId)
+        {
+            GameUi.Instance.ShowResult("Game Ended", "Opponent left the game.");
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    public void PlayAgainServerRpc(ulong clientId)
+    {
+        if (!IsServer) return;
+
+        readyToPlayAgain.Add(clientId);
+
+        if(readyToPlayAgain.Count == 2 && players.Count == 2)
+        {
+            StartRound();
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    public void ExitGameServerRpc(ulong clientId)
+    {
+        HandlePlayerExit(clientId);
     }
 }
