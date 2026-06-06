@@ -18,7 +18,10 @@ public class GameManager : NetworkBehaviour
     private readonly List<PlayerData> players = new();
     private readonly Hand dealerHand = new();
 
-    private int currentPlayerIndex;
+    public NetworkVariable<int> CurrentPlayerIndex = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
     private bool roundActive;
 
     public NetworkVariable<ulong> Player1Id = new(
@@ -73,9 +76,9 @@ public class GameManager : NetworkBehaviour
 
     public void NextTurn()
     {  
-        currentPlayerIndex++;
+        CurrentPlayerIndex.Value++;
 
-        if (currentPlayerIndex >= players.Count)
+        if (CurrentPlayerIndex.Value >= players.Count)
         {
             DealerTurn();
             return;
@@ -128,7 +131,7 @@ public class GameManager : NetworkBehaviour
     public void EndRound()
     {
         roundActive = false;
-        currentPlayerIndex = 0;
+        CurrentPlayerIndex.Value = 0;
 
         foreach (PlayerData player in players)
         {
@@ -173,7 +176,7 @@ public class GameManager : NetworkBehaviour
             player.Clear();
         }
 
-        currentPlayerIndex = 0;
+        CurrentPlayerIndex.Value = 0;
         CurrentTurn.Value = Enum_Turn.dealing;
 
         DealFirstCards();
@@ -197,7 +200,7 @@ public class GameManager : NetworkBehaviour
         PlayerData player = GetPlayer(clientId);
         if (player == null) return;
 
-        if (players[currentPlayerIndex].ClientId != clientId) return;
+        if (players[CurrentPlayerIndex.Value].ClientId != clientId) return;
 
         Card card = deck.Draw();
         player.Hit(card);
@@ -226,7 +229,7 @@ public class GameManager : NetworkBehaviour
         PlayerData player = GetPlayer(clientId);
         if (player == null) return;
 
-        if(players[currentPlayerIndex].ClientId != clientId) return;
+        if(players[CurrentPlayerIndex.Value].ClientId != clientId) return;
 
         player.Stand();
         NextTurn();
@@ -255,11 +258,24 @@ public class GameManager : NetworkBehaviour
 
     public bool IsPlayerTurn(ulong clientId)
     {
+        if (CurrentTurn.Value != Enum_Turn.player) return false; 
+
+        if (!IsServer)
+        {
+            int index = CurrentPlayerIndex.Value;
+
+            if (index == 0 && Player1Id.Value == clientId) return true;
+            if (index == 1 && Player2Id.Value == clientId) return true;
+
+            return false;
+        }
+
+
+
         if (players.Count == 0) return false;
+        if (CurrentPlayerIndex.Value >= players.Count) return false;
 
-        if (currentPlayerIndex >= players.Count) return false;
-
-        return CurrentTurn.Value == Enum_Turn.player && players[currentPlayerIndex].ClientId == clientId;
+        return players[CurrentPlayerIndex.Value].ClientId == clientId;
     }
 
 

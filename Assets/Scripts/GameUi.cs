@@ -45,13 +45,27 @@ public class GameUi : MonoBehaviour
         {
             gm.CurrentTurn.OnValueChanged += OnTurnChanged;
 
+            gm.CurrentPlayerIndex.OnValueChanged += OnCurrentPlayerIndexChanged;
+
             gm.Player1Id.OnValueChanged += OnPlayerIdsChanged;
             gm.Player2Id.OnValueChanged += OnPlayerIdsChanged;
 
             SetupPlayers();
+
+            OnTurnChanged(gm.CurrentTurn.Value, gm.CurrentTurn.Value);
         }
 
     }
+
+    private void OnCurrentPlayerIndexChanged(int oldIndex, int newIndex)
+    {
+        if (gm == null) return;
+        bool myTurn = gm.IsPlayerTurn(NetworkManager.Singleton.LocalClientId);
+        hitButton.SetActive(myTurn);
+        standButton.SetActive(myTurn);
+    }
+
+
     private void OnPlayerIdsChanged(ulong oldId, ulong newId)
     {
         SetupPlayers();
