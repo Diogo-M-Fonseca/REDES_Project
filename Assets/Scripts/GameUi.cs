@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TMPro;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -18,6 +19,9 @@ public class GameUi : MonoBehaviour
 
     [SerializeField] private TMP_Text turn;
     [SerializeField] private TMP_Text result;
+    [SerializeField] private TMP_Text player1Value;
+    [SerializeField] private TMP_Text player2Value;
+    [SerializeField] private TMP_Text dealerValue;
 
     private readonly Dictionary<ulong, Transform> playerSpots = new();
     private readonly Dictionary<ulong, int> cardCount = new();
@@ -50,11 +54,33 @@ public class GameUi : MonoBehaviour
             gm.Player1Id.OnValueChanged += OnPlayerIdsChanged;
             gm.Player2Id.OnValueChanged += OnPlayerIdsChanged;
 
+            gm.Player1HandValue.OnValueChanged += OnPlayer1HandValueChanged;
+            gm.Player2HandValue.OnValueChanged += OnPlayer2HandValueChanged;
+            gm.DealerHandValue.OnValueChanged += OnDealerHandValueChanged;
+
             SetupPlayers();
 
             OnTurnChanged(gm.CurrentTurn.Value, gm.CurrentTurn.Value);
         }
 
+    }
+
+    private void OnPlayer1HandValueChanged(int oldValue, int newValue)
+    {
+        if (player1Value != null)
+            player1Value.text = $"Value: {newValue}";
+    }
+
+    private void OnPlayer2HandValueChanged(int oldValue, int newValue)
+    {
+        if (player2Value != null)
+            player2Value.text = $"Value: {newValue}";
+    }
+
+    private void OnDealerHandValueChanged(int oldValue, int newValue)
+    {
+        if (dealerValue != null)
+            dealerValue.text = $"Value: {newValue}";
     }
 
     private void OnCurrentPlayerIndexChanged(int oldIndex, int newIndex)

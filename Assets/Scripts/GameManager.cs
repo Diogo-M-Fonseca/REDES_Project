@@ -34,6 +34,21 @@ public class GameManager : NetworkBehaviour
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
 
+    public NetworkVariable<int> Player1HandValue = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    public NetworkVariable<int> Player2HandValue = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    public NetworkVariable<int> DealerHandValue = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -93,6 +108,7 @@ public class GameManager : NetworkBehaviour
         {
             Card card = deck.Draw();
             dealerHand.AddCard(card);
+            UpdateDealerHandValue();
             DealerCardDrawnClientRpc(card);
         }
 
@@ -155,10 +171,12 @@ public class GameManager : NetworkBehaviour
 
         Card dealerCard1 = deck.Draw();
         dealerHand.AddCard(dealerCard1);
+        UpdateDealerHandValue();
         DealerCardDrawnClientRpc(dealerCard1);
 
         Card dealerCard2 = deck.Draw();
         dealerHand.AddCard(dealerCard2);
+        UpdateDealerHandValue();
         DealerCardDrawnClientRpc(dealerCard2);
     }
 
@@ -166,6 +184,10 @@ public class GameManager : NetworkBehaviour
     {
         if (!IsServer || roundActive) return;
         roundActive = true;
+
+        Player1HandValue.Value = 0;
+        Player2HandValue.Value = 0;
+        DealerHandValue.Value = 0;
 
         deck = new Deck();
         deck.Initialize();
@@ -189,6 +211,7 @@ public class GameManager : NetworkBehaviour
     {
         Card card = deck.Draw();
         player.Hit(card);
+        UpdatePlayerHandValue(player.ClientId);
         SendCardClientRpc(player.ClientId, card);
     }
 
@@ -204,6 +227,8 @@ public class GameManager : NetworkBehaviour
 
         Card card = deck.Draw();
         player.Hit(card);
+
+        UpdatePlayerHandValue(player.ClientId);
 
         SendCardClientRpc(player.ClientId, card);
 
@@ -233,6 +258,26 @@ public class GameManager : NetworkBehaviour
 
         player.Stand();
         NextTurn();
+    }
+
+    private void UpdatePlayerHandValue(ulong clientId)
+    {
+        PlayerData player = GetPlayer(clientId);
+        if (player == null) return;
+
+        if (clientId == Player1Id.Value)
+        {
+            Player1HandValue.Value = player.HandValue;
+        }
+        else if (clientId == Player2Id.Value)
+        {
+            Player2HandValue.Value = player.HandValue;
+        }
+    }
+
+    private void UpdateDealerHandValue()
+    {
+        DealerHandValue.Value = dealerHand.GetHandValue();
     }
 
     private void OnClientConnected(ulong clientId)
