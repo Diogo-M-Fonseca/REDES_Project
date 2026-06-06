@@ -24,6 +24,9 @@ public class GameUi : MonoBehaviour
 
     private GameManager gm;
 
+    private bool isReady = false;
+    private readonly Queue<(ulong, Card)> pendingCards = new();
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -32,7 +35,6 @@ public class GameUi : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
 
     }
     private void Start()
@@ -43,21 +45,20 @@ public class GameUi : MonoBehaviour
         {
             gm.CurrentTurn.OnValueChanged += OnTurnChanged;
 
-            // Forçar setup após 1 segundo (dar tempo para IDs serem configurados)
-            Invoke(nameof(DelayedSetup), 0.5f);
+            gm.Player1Id.OnValueChanged += OnPlayerIdsChanged;
+            gm.Player2Id.OnValueChanged += OnPlayerIdsChanged;
+
+            SetupPlayers();
         }
 
     }
-
-    //so pra teste 
-    private void DelayedSetup()
+    private void OnPlayerIdsChanged(ulong oldId, ulong newId)
     {
         SetupPlayers();
     }
 
     private void SetupPlayers()
     {
-        if (gm == null) gm = GameManager.Instance;
         if (gm == null) return;
 
         playerSpots.Clear();
@@ -76,6 +77,15 @@ public class GameUi : MonoBehaviour
             cardCount[gm.Player2Id.Value] = 0;
             Debug.Log($"[UI] Player 2 ({gm.Player2Id.Value}) assigned to spot 2");
         }
+
+        bool bothPlayersReady = (gm.Player1Id.Value != ulong.MaxValue && gm.Player2Id.Value != ulong.MaxValue);
+
+        if (bothPlayersReady)
+        {
+            isReady = true;
+            Debug.Log("[UI] Ready processing pending cards");
+            ProcessPendingCards();
+        }
     }
 
     private void OnTurnChanged(Enum_Turn oldTurn, Enum_Turn newTurn)
@@ -93,6 +103,13 @@ public class GameUi : MonoBehaviour
 
     public void AddCardToPlayer(ulong playerId, Card card)
     {
+        if (!isReady)
+        {
+            pendingCards.Enqueue((playerId, card));
+            Debug.Log($"[UI] Not ready yet");
+            return;
+        }
+
         if (!playerSpots.ContainsKey(playerId))
         {
             Debug.LogWarning($"[UI] No spot found for player {playerId}");
@@ -112,6 +129,16 @@ public class GameUi : MonoBehaviour
         cardCount[playerId]++;
 
     }
+
+    private void ProcessPendingCards()
+    {
+        while (pendingCards.Count > 0)
+        {
+            var (playerId, card) = pendingCards.Dequeue();
+            AddCardToPlayer (playerId, card);
+        }
+    }
+
 
     public void AddCardToDealer(Card card)
     {
