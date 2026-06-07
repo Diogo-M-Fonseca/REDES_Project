@@ -50,3 +50,50 @@ o sistema que me pareceu mais interessante de implementar.
 
 Lembrando que o sistema segue uma arquitetura **Cliente-Servidor** com **Autoridade total do servidor**
 
+flowchart TD
+    subgraph Servidor["Servidor (Autoridade)"]
+        NM[NetworkManager]
+        GM[GameManager<br>NetworkBehaviour]
+        Deck[Deck]
+        PlayersData[players: List<PlayerData>]
+        DealerHand[dealerHand: Hand]
+        NV[NetworkVariables<br>CurrentTurn, CurrentPlayerIndex,<br>Player1Id, Player2Id,<br>HandValues]
+    end
+
+    subgraph ClienteA["Cliente A"]
+        PA[Player (NetworkBehaviour)<br>OwnerClientId = A]
+        UIA[GameUi]
+        CardViewA[CardView]
+    end
+
+    subgraph ClienteB["Cliente B"]
+        PB[Player (NetworkBehaviour)<br>OwnerClientId = B]
+        UIB[GameUi]
+        CardViewB[CardView]
+    end
+
+    %% Conexões de rede (linhas pontilhadas)
+    Servidor <-->|"RPCs (ServerRpc / ClientRpc)"| ClienteA
+    Servidor <-->|"RPCs (ServerRpc / ClientRpc)"| ClienteB
+
+    %% Relações internas
+    GM --> Deck
+    GM --> PlayersData
+    GM --> DealerHand
+    GM --> NV
+    NM -.->|Spawn| PA
+    NM -.->|Spawn| PB
+
+    %% Comunicação específica
+    PA -->|HitServerRpc, StandServerRpc| GM
+    PB -->|HitServerRpc, StandServerRpc| GM
+    GM -->|ClientRpc: SendCard, DealerCardDrawn, etc.| UIA
+    GM -->|ClientRpc: SendCard, DealerCardDrawn, etc.| UIB
+    UIA --> CardViewA
+    UIB --> CardViewB
+
+    %% Legenda
+    style Servidor fill:#2d4a6e,stroke:#0f172a,stroke-width:2px,color:#fff
+    style ClienteA fill:#2d6e4a,stroke:#0f172a,stroke-width:2px,color:#fff
+    style ClienteB fill:#2d6e4a,stroke:#0f172a,stroke-width:2px,color:#fff
+    linkStyle default stroke-width:2px,stroke:#60a5fa
