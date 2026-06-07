@@ -22,7 +22,9 @@ using Debug = UnityEngine.Debug;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 #endif
-
+/// <summary>
+/// Código do excelentissimo stor Diogo
+/// </summary>
 public class NetworkSetup : MonoBehaviour
 {
     //Código do excelentissimo stor Diogo
