@@ -134,17 +134,7 @@ public class GameManager : NetworkBehaviour
             string dealerReason;
             string resultType;
 
-            if (playerBust)
-            {
-                resultType = "lose";
-                dealerReason = "You busted! You lose.";
-            }
-            else if (dealerBust)
-            {
-                resultType = "win";
-                dealerReason = "Dealer busted! You win.";
-            }
-            else if (playerBlackjack && !dealerBlackjack)
+            if (playerBlackjack && !dealerBlackjack)
             {
                 resultType = "win";
                 dealerReason = "Blackjack! you win!";
@@ -153,6 +143,16 @@ public class GameManager : NetworkBehaviour
             {
                 resultType = "lose";
                 dealerReason = "Dealer has a Blackjack. You lose.";
+            }
+            else if (playerBust)
+            {
+                resultType = "lose";
+                dealerReason = "You busted! You lose.";
+            }
+            else if (dealerBust)
+            {
+                resultType = "win";
+                dealerReason = "Dealer busted! You win.";
             }
             else if (player.HandValue > dealerHand.GetHandValue())
             {
@@ -173,12 +173,12 @@ public class GameManager : NetworkBehaviour
             string pvpMessage = GetPvpMessage(player);
             string completeMessage = dealerReason + "\n\n" + pvpMessage;
 
-            if(resultType == "win") 
-                OnPlayerWinClientRpc(player.ClientId, completeMessage);
-            if(resultType == "lose")
-                OnPlayerLoseClientRpc(player.ClientId, completeMessage);
-            else
-                OnPlayerPushClientRpc(player.ClientId, completeMessage);
+            switch (resultType)
+            {
+                case "win": OnPlayerWinClientRpc(player.ClientId, completeMessage); break;
+                case "lose": OnPlayerLoseClientRpc(player.ClientId, completeMessage); break;
+                default: OnPlayerPushClientRpc(player.ClientId, completeMessage); break;
+            }
         }
 
         EndRound();
@@ -456,7 +456,7 @@ public class GameManager : NetworkBehaviour
     {
         if (NetworkManager.Singleton.LocalClientId != clientId) return;
 
-        GameUi.Instance.ShowResult("YOU PUSH", reason);
+        GameUi.Instance.ShowResult("YOU DRAW", reason);
     }
 
     [ClientRpc]
