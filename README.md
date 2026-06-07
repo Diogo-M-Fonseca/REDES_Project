@@ -50,6 +50,7 @@ o sistema que me pareceu mais interessante de implementar.
 
 Lembrando que o sistema segue uma arquitetura **Cliente-Servidor** com **Autoridade total do servidor**
 
+```mermaid
 flowchart TD
     subgraph Servidor["Servidor (Autoridade)"]
         NM[NetworkManager]
@@ -97,3 +98,4 @@ flowchart TD
     style ClienteA fill:#2d6e4a,stroke:#0f172a,stroke-width:2px,color:#fff
     style ClienteB fill:#2d6e4a,stroke:#0f172a,stroke-width:2px,color:#fff
     linkStyle default stroke-width:2px,stroke:#60a5fa
+```
