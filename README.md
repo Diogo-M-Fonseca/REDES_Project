@@ -21,6 +21,7 @@ o sistema que me pareceu mais interessante de implementar.
 |PlayerData.cs| Classe que representa os dados de cada jogador no servidor, contem ID, mão, e boolean de stand|
 |GameUi.cs| Classe singleton que trata do UI do cliente, exibe cartas, textos com os valores das pontuações, botões, indicadores de turno e tela de fim de jogo. Reage a NetworkVariable.OnValueChanged e chama Rpcs para pedir permissão ao servidor por parte do cliente|
 |GameManager.cs| NetworkBehaviour principal do projecto, um singleton que gerencia o fluxo do jogo, turnos, NetworkVariables, e Rpcs, maior parte das ações do servidor são feitas neste script|
+|NetworkSetup| Script dado pelo professor que contem entre outras coisas tools para facilitar o desenvolvimento|
 
 ## Técnicas utilizadas
 
