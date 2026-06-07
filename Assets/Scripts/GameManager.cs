@@ -128,25 +128,48 @@ public class GameManager : NetworkBehaviour
         {
             bool playerBust = player.IsBust();
             bool dealerBust = dealerHand.IsBust();
+            bool playerBlackjack = player.HasBlackJack();
+            bool dealerBlackjack = dealerHand.HasBlackJack();
 
             string dealerReason;
             string resultType;
 
-            if (!playerBust && (dealerBust||player.HandValue > dealerHand.GetHandValue()))
+            if (playerBust)
             {
-                dealerReason = dealerBust ? "Dealer busted! You win." : "You have a higher score.";
-                resultType = "win";
+                resultType = "lose";
+                dealerReason = "You busted! You lose.";
             }
-            else if (playerBust || player.HandValue < dealerHand.GetHandValue())
+            else if (dealerBust)
             {
-                dealerReason = playerBust ? "You busted! You lose." : "Dealer have a higher score.";
-                resultType= "lose";
+                resultType = "win";
+                dealerReason = "Dealer busted! You win.";
+            }
+            else if (playerBlackjack && !dealerBlackjack)
+            {
+                resultType = "win";
+                dealerReason = "Blackjack! you win!";
+            }
+            else if (dealerBlackjack && !playerBlackjack)
+            {
+                resultType = "lose";
+                dealerReason = "Dealer has a Blackjack. You lose.";
+            }
+            else if (player.HandValue > dealerHand.GetHandValue())
+            {
+                resultType = "win";
+                dealerReason = "You have a higher score.";
+            }
+            else if (player.HandValue < dealerHand.GetHandValue())
+            {
+                resultType = "lose";
+                dealerReason = "Dealer has a higher score.";
             }
             else
             {
-                dealerReason = "DRAW";
                 resultType = "push";
+                dealerReason = "Same score. Push.";
             }
+
             string pvpMessage = GetPvpMessage(player);
             string completeMessage = dealerReason + "\n\n" + pvpMessage;
 
