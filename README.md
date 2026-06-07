@@ -46,6 +46,12 @@ o sistema que me pareceu mais interessante de implementar.
 - [How to use RPCs in Netcode - Unity 6 Tutorial - Part 4: Sunny Valley Studio](https://youtu.be/c6r1yzZRUzQ?si=ofGxPg_Ah5wKuXYF)
 - [Getting started with networking concepts: Unity](https://youtu.be/kVt0I6zZsf0?si=FwfkuWIOcx1K2mxe)
 - [Fisher–Yates shuffle in C#: Stack Overflow](https://stackoverflow.com/questions/56378647/fisher-yates-shuffle-in-c-sharp)
+- [Sprites de cartas 2d pixel Arte](https://www.kenney.nl/assets/playing-cards-pack)
+- Quero também mencionar colegas que ajudaram me com o projecto:
+    - Lisa Carvalho a22405414 que ajudou me com duvidas de código em geral, fez o sprite da mesa e foi uma companhia nestes dias de trabalho intensivo
+    - Miguel Filipe a22408872 que ajudou me principalmente com o relatório mas também com algumas duvidas de Netcode
+    - Isis Rocha a22504772 que ajudou me fazendo os sprites dos pointers de turno e foi também uma companhia nestes dias de trabalho intensivo
+    - Gonçalo Gonçalves do curso de Engenheira Informática e de Computadores no ISEL que ajudou me com o código do jogo na versão singleplayer e teve um papel de "mentoria" quando eu tive que passar para online
 
 
 ## Diagrama de arquitectura de redes
