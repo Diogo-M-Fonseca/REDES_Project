@@ -49,3 +49,4 @@ o sistema que me pareceu mais interessante de implementar.
 ## Diagrama de arquitectura de redes
 
 Lembrando que o sistema segue uma arquitetura **Cliente-Servidor** com **Autoridade total do servidor**
+
